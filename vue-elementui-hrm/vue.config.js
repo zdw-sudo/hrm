@@ -6,7 +6,13 @@ module.exports = {
         // 请求前缀
         target: process.env.VUE_APP_HOST + ':' + process.env.VUE_APP_PORT,
         pathRewrite: { '^/dev': '' },
-        changeOrigin: true // 用于控制请求头中的host值
+        changeOrigin: true, // 用于控制请求头中的host值
+        onProxyRes (proxyRes) {
+          if (proxyRes.headers['content-type'] && proxyRes.headers['content-type'].includes('text/event-stream')) {
+            proxyRes.headers['cache-control'] = 'no-cache'
+            proxyRes.headers['x-accel-buffering'] = 'no'
+          }
+        }
       }
     }
   }

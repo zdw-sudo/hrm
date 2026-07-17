@@ -39,6 +39,8 @@
 </template>
 <script>
 import { login } from '@/api/login'
+import { queryByStaffId, queryPermission } from '@/api/menu'
+import { setDynamicRoute } from '@/router'
 import { setValidateCode } from '@/utils/validateCode'
 
 export default {
@@ -75,11 +77,25 @@ export default {
           login(this.staff).then(
             response => {
               if (response.code === 200) {
-                this.$store.commit('staff/SET_STAFF', response.data) // 存储用户信息
-                this.$store.commit('token/SET_TOKEN', response.token) // 存储token
-                this.$message.success('登录成功！')
-                this.$router.push({
-                  path: '/home'
+                this.$store.commit('staff/SET_STAFF', response.data)
+                this.$store.commit('token/SET_TOKEN', response.token)
+                const staffId = response.data.id
+                queryByStaffId(staffId).then(menuRes => {
+                  if (menuRes.code === 200) {
+                    const menuList = menuRes.data
+                    menuList.push({
+                      id: 0, code: 'home', name: '首页', icon: 's-home', path: '/home', children: []
+                    })
+                    setDynamicRoute(menuList)
+                    this.$store.commit('menu/SET_MENU', menuList)
+                  }
+                  queryPermission(staffId).then(permRes => {
+                    if (permRes.code === 200) {
+                      this.$store.commit('permission/SET_PERMISSION', permRes.data)
+                    }
+                  })
+                  this.$message.success('登录成功！')
+                  this.$router.push({ path: '/home' })
                 })
               } else {
                 this.$message.error(response.message)
